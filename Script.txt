@@ -1,0 +1,36 @@
+#Create an Azure Container Registry
+-----------------------------------
+az group create --name AKSRG --location uksouth
+az acr create --resource-group AKSRG --name kvschowdaryACR --sku Basic
+
+#Create an Azure Kubernetes Service cluster
+------------------------------------------
+az aks create -g AKSRG -n MyAKS --location uksouth  --attach-acr kvschowdaryACR --generate-ssh-keys
+
+#Connect to your AKS cluster
+----------------------------
+
+az aks get-credentials --resource-group AKSRG --name MyAKS
+
+
+#Build and push the sample application to the ACR
+-------------------------------------------------
+az acr build --image webfrontend:v1 --registry kvschowdaryACR --file Dockerfile .
+
+
+#Create your Helm chart
+-------------------------
+helm create webfrontend
+
+
+#Run your Helm chart
+--------------------
+helm install webfrontend webfrontend/
+kubectl get service --watch
+
+
+kubectl get pods
+kubectl delete clusterrolebinding kubernetes-dashboard
+kubectl create clusterrolebinding kubernetes-dashboard --clusterrole=cluster-admin --serviceaccount=kube-system:kubernetes-dashboard --user=clusterUser
+
+az aks browse --resource-group AKSRG --name MyAKS
